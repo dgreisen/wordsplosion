@@ -51,11 +51,10 @@
 <body>
     <div id="target-container"></div>
     <script>
-        let wordList = ['Alaska','apple','aurora','baby','badger','ball','ballerina','banana','battery','beach','bear','beaver','beaver dam','bed','bee','beet','beluga','bicycle','bike','bird','blue','blueberry','boat','book','bowhead','bread','bridge','broccoli','cake','camping','canoe','carrot','castle','cat','caterpillar','cello','chair','chicken','chocolate','city','cliffs','clouds','coins','combine','computer','convertible','coral reef','cow','crab','crystal','cupcake','dam','danced','dear','desert','desk','dog','dolphin','drill','duck','dump truck','eagle','ear','earth','egg','elephant','etrog','excavator','eye','falcon','farm','ferry','fire engine','fire tower','fish','flower','fly','forest','fort','fox','frog','garbage truck','garden','gazelle','gecko','giraffe','glacier','golf','goose','gorilla','grape','greyhound','hammer','hands','hippo','horse','hot chocolate','house','humpback','husky','ice','ice cream','island','ISS','juice','kangaroo','king fisher','kite','kiwi','koi','lake','lava','lighthouse','lion','lulav','lynx','mars','merry go round','mesa','mezuzah','milk','mill','minke','minnow','monkey','moon','moose','motorcycle','mountain','mouse','mouth','muffin','mule','muskox','newspaper','northern lights','nose','oak','ocean','orca','otter','pepper','phone','plane','planet','pond','power line','puma','rain','rainbow','rainforest','raven','recorder','restaurant','right','river','road','rock','rocket','rookery','rose','rowboat','sailboat','salmon','sand','satellite','savanna','saxophone','scooter','sei','Shabbat','shells','ship','skid','skunk','sky','sled','snake','snow','snowflake','snowplow','snowshoes','soccer','solar panel','sperm','stars','strawberry','stream','sun','surfing','swan','table','tablet','taco','telephone','tennis','Texas','tidepool','tiger','toad','tools','torah','tractor','train','tree','treehouse','tressle','trombone','trout','trumpet','tuba','tulip','umbrella','violin','volcano','water','water tower','waves','wind','windmill','worm','wrench','yad','yak','zebra','zoo',]
-
+        let wordList = ['Alaska','apple','aurora','baby','badger','ball','ballerina','banana','battery','beach','bear','beaver','beaver dam','bed','bee','beet','beluga','bicycle','bike','bird','blue','blueberry','boat','book','bowhead','bread','bridge','broccoli','cake','camping','canoe','carrot','castle','cat','caterpillar','cello','chair','chicken','chocolate','city','cliffs','clouds','coins','combine','computer','convertible','coral reef','cow','crab','crystal','cupcake','dam','danced','dear','desert','desk','dog','dolphin','drill','duck','dump truck','eagle','ear','earth','egg','elephant','etrog','excavator','eye','falcon','farm','ferry','fire engine','fire tower','fish','flower','fly','forest','fort','fox','frog','garbage truck','garden','gazelle','gecko','giraffe','glacier','golf','goose','gorilla','grape','greyhound','hammer','hands','hippo','horse','hot chocolate','house','humpback','husky','ice','ice cream','island','ISS','juice','kangaroo','king fisher','kite','kiwi','koi','lake','lava','lighthouse','lion','lulav','lynx','mars','merry go round','mesa','mezuzah','milk','mill','minke','minnow','monkey','moon','moose','motorcycle','mountain','mouse','mouth','muffin','mule','muskox','newspaper','northern lights','nose','oak','ocean','orca','otter','pepper','phone','plane','planet','pond','power line','puma','rain','rainbow','rainforest','raven','recorder','restaurant','right','river','road','rock','rocket','rookery','rose','rowboat','sailboat','salmon','sand','satellite','savanna','saxophone','scooter','sei','Shabbat','shells','ship','skid','skunk','sky','sled','snake','snow','snowflake','snowplow','snowshoes','soccer','solar panel','sperm whale','stars','strawberry','stream','sun','surfing','swan','table','tablet','taco','telephone','tennis','Texas','tidepool','tiger','toad','tools','torah','tractor','train','tree','treehouse','tressle','trombone','trout','trumpet','tuba','tulip','umbrella','violin','volcano','water','water tower','waves','wind','windmill','worm','wrench','yad','yak','zebra','zoo',];
+        // wordList = ['a'];
         function setUpRandomWord() {
-            let index = Math.floor(Math.random() * wordList.length);
-            let word = wordList[index];
+            let word = wordList[choose(0, wordList.length)];
             setUpWord(word);
         }
 
@@ -65,7 +64,7 @@
             targetContainer.empty();
             for (i in word) {
                 letter = word[i];
-                let el = $(`<div class="letter"><div class="target letter hidden ${letter}-target">${letter}</div><div class="animate letter draggable ${letter}-draggable" data-x="0" data-y="0">${letter}</div></div>`)
+                let el = $(`<div class="letter"><div class="target letter hidden ${letter}-target">${letter}</div><div class="animate letter draggable ${letter}-draggable" data-x="0" data-y="0" data-ax="0" data-ay="0">${letter}</div></div>`)
                 let item = targetContainer.append(el);
             }
             setRandomColor($('.draggable'))
@@ -74,6 +73,8 @@
         }
 
         function startExplosion(e) {
+            // the word's been clicked!
+            // explode all the letters to they can be put back together again.
             let word = [...document.querySelectorAll('.target')].reduce((w, el) => {return w + el.textContent;}, '')
             let utterance = new SpeechSynthesisUtterance(word);
             speechSynthesis.speak(utterance);
@@ -81,7 +82,7 @@
             let targets = $('.target')
             targets.removeClass('hidden');
             for (draggable of draggables) {
-                startRandomAnimation(draggable, 20, 60, 5);
+                startRandomAnimation(draggable, 30, 60, 5);
             }
             draggables.off('click');
 
@@ -148,7 +149,8 @@
         }
 
         function completeWord() {
-            console.log('completed!!');
+            // all letters have been put back together!
+            // say the word and setup so next click starts a new word
             let word = [...document.querySelectorAll('.target')].reduce((w, el) => {return w + el.textContent;}, '')
             let utterance = new SpeechSynthesisUtterance(word);
             speechSynthesis.speak(utterance);
@@ -156,26 +158,27 @@
 
         }
         function startRandomAnimation(el, min, max, a) {
-            magnitude = max - min;
-            vm = min + (Math.random() * magnitude)
-            vd = Math.random() * 2 * 3.141592
+            targetContainer = $('#target-container');
+
+            let rect = el.getBoundingClientRect();
+
+            vm = choose(min, max);
+            vd = choose(0, 2, 0.2) * 3.141592;
             vx = vm * Math.cos(vd)
             vy = vm * Math.sin(vd)
-            vx = (Math.abs(vx) + min) * (Math.abs(vx) / vx)
             startAnimation(el, vx, vy, a);
         }
 
         function startAnimation(el, vx, vy, a) {
+            // move the el element with an initial velocity of vx and vy
+            // and an deceleration of a
             el.dataset.vx = vx;
             el.dataset.vy = vy;
-            let ax = ay = 0
             if (vx) {
-                ax = a/Math.sqrt(1.0+Math.pow(vy/vx, 2))
-                el.dataset.ax = Math.max(Math.round(ax), 1);
-            }
-            if (vy) {
-                ay = ax*vy/vx;
-                el.dataset.ay = Math.max(Math.round(ay), 1);
+                let ax = el.dataset.ax = Math.abs(a/Math.sqrt(1.0+Math.pow(vy/vx, 2)));
+                el.dataset.ay = Math.abs(ax*vy/vx);
+            } else {
+                el.dataset.ay = a;
             }
             window.addEventListener("transitionend", animate);
             animate(el);
@@ -187,20 +190,21 @@
             }
             targetContainer = $('#target-container');
             let rect = el.getBoundingClientRect();
-            let vx = parseInt(el.dataset.vx);
-            vx = manageCollision(vx, rect.width, rect.left, targetContainer.height());
-            let vy = parseInt(el.dataset.vy);
-            vy = manageCollision(vy, rect.height, rect.top, targetContainer.width());
-            let ax = parseInt(el.dataset.ax);
-            let ay = parseInt(el.dataset.ay);
-            if (vx || vy) {
+            let vx = parseFloat(el.dataset.vx);
+            vx = manageCollision(vx, rect.width, rect.left, targetContainer.width());
+            let vy = parseFloat(el.dataset.vy);
+            vy = manageCollision(vy, rect.height, rect.top, targetContainer.height());
+            let ax = parseFloat(el.dataset.ax);
+            let ay = parseFloat(el.dataset.ay);
+            if (Math.round(vx) || Math.round(vy)) {
                 translate(el, vx, vy);
                 vx = Math.max(Math.abs(vx)-ax, 0)*vx/Math.abs(vx) || 0;
                 el.dataset.vx = vx;
                 vy = Math.max(Math.abs(vy)-ay, 0)*vy/Math.abs(vy) || 0;
                 el.dataset.vy = vy;
             } else {
-                // debugger;
+                el.dataset.vx = 0;
+                el.dataset.vy = 0;
                 finishAnimation(el);
                 return;
             }
@@ -208,7 +212,8 @@
         }
         
         function manageCollision(v, size, pos, max) {
-            if ((pos + v) > (max - size) || (pos + v) < 0) {
+            let newPos = pos + v;
+            if (newPos > (max - size) || newPos < 0) {
                 return -v;
             } else {
                 return v;
@@ -216,7 +221,7 @@
         }
 
         function finishAnimation(el) {
-            // debugger;
+            console.log('finish animating', el.textContent);
             el.removeEventListener("transitionend", animate);
             let rect = el.getBoundingClientRect();
             let initx = el.dataset.initx = rect.left + rect.width  / 2;
@@ -247,36 +252,49 @@
                 }
             });
         }
+
         function translate(el, dx, dy) {
-            let x = parseInt(el.dataset.x)
-            let y = parseInt(el.dataset.y)
+            // translate el by 
+            let x = parseFloat(el.dataset.x)
+            let y = parseFloat(el.dataset.y)
             x += dx;
             y += dy;
-            
+
             el.style.transform =
-                `translate(${x}px, ${y}px)`
+                `translate(${Math.round(x)}px, ${Math.round(y)}px)`
             
             el.dataset.x = x;
             el.dataset.y = y;
         }
-        const myWord = 'Apple';
-        
-        setUpWord(myWord);
 
         function choose(min, max, step) {
-            return min + (Math.round((Math.random() * (max - min) / step)) * step);
+            // choose an integer between min (inclusive) and max (exclusive)
+            // if step is given, only return integers divisible by step
+            step = step || 1;
+            return min + (Math.floor((Math.random() * (max - min) / step)) * step);
         }
+
         function getRandomColor() {
-            let h = choose(0, 340, 20)
-            let l = choose(40, 80, 10)
+            // Get a Random Color defined by hsl. 
+            // hsl allows us to eliminate the preponderance of "muddy" colors you get when choosing in RGB
+            // hue: 20 degree increments
+            // saturation: 100%
+            // lightness: between 40% and 80%
+            let h = choose(0, 360, 20)
+            let l = choose(40, 100, 10)
             let color = 'hsl(' + h + ', 100%, ' + l + '%)'
             return color;
         }
+
         function setRandomColor(els) {
+            // set each element in els to a different random color.
             for (el of els) {
                 $(el).css("color", getRandomColor());
             }
         }
+        
+        // kick everything off!
+        setUpRandomWord();
     </script>
 
 </body>
