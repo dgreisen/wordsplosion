@@ -82,7 +82,7 @@
             let targets = $('.target')
             targets.removeClass('hidden');
             for (draggable of draggables) {
-                startRandomAnimation(draggable, 30, 60, 5);
+                startRandomAnimation(draggable, .05, .2, 5);
             }
             draggables.off('click');
 
@@ -158,15 +158,28 @@
 
         }
         function startRandomAnimation(el, min, max, a) {
-            targetContainer = $('#target-container');
-
-            let rect = el.getBoundingClientRect();
-
-            vm = choose(min, max);
-            vd = choose(0, 2, 0.2) * 3.141592;
-            vx = vm * Math.cos(vd)
-            vy = vm * Math.sin(vd)
+            let containerEl = document.getElementById('target-container');
+            let containerRect = containerEl.getBoundingClientRect();
+            let xUnit = containerRect.width / 2;
+            let yUnit = containerRect.height / 2;
+            let spread = max - min;
+            vx = xUnit * addMagnitude(choose(-spread, spread, 1/xUnit), min)
+            vy = yUnit * addMagnitude(choose(-spread, spread, 1/yUnit), min)
             startAnimation(el, vx, vy, a);
+        }
+
+        function sign(a) {
+            // return the sign (-1, 0, 1) of a
+            return a/Math.abs(a) || 0;
+
+        }
+
+        function addMagnitude(a, b) {
+            // add b to the absolute madgitude of a, while maintaining a's sign
+            // ensure |a| + b does not go below 0
+            // max((a/|a|)(|a| + b), 0)
+            magnitude = Math.max((Math.abs(a) + b), 0)
+            return sign(a) * magnitude;
         }
 
         function startAnimation(el, vx, vy, a) {
@@ -198,10 +211,8 @@
             let ay = parseFloat(el.dataset.ay);
             if (Math.round(vx) || Math.round(vy)) {
                 translate(el, vx, vy);
-                vx = Math.max(Math.abs(vx)-ax, 0)*vx/Math.abs(vx) || 0;
-                el.dataset.vx = vx;
-                vy = Math.max(Math.abs(vy)-ay, 0)*vy/Math.abs(vy) || 0;
-                el.dataset.vy = vy;
+                el.dataset.vx = addMagnitude(vx, -ax);
+                el.dataset.vy = addMagnitude(vy, -ay);
             } else {
                 el.dataset.vx = 0;
                 el.dataset.vy = 0;
