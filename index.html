@@ -13,6 +13,17 @@
             width: fit-content;
             display: block;
         }
+        .exploded {
+            text-shadow: 1px 1px 2px grey;
+        }
+        .dragging {
+            font-size: 92px;
+            text-shadow: 2px 2px 4px black;
+        }
+        .dragging-parent {
+            /* parent of dragging element must be high z in order for letter to be above all other letters */
+            z-index: 1000;
+        }
         .hidden {
             visibility: hidden;
         }
@@ -24,6 +35,10 @@
             user-select: none;
             z-index: 100;
             position:absolute
+        }
+        .charging {
+            transition: font-size 3.5s linear;
+            font-size: 120px;
         }
         .target {
             float: left;
@@ -37,8 +52,9 @@
             left: 0;
             z-index: 10;
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
-            align-items: center;
+            align-content: center;
             overflow: hidden;
         }
         body {
@@ -46,20 +62,51 @@
             overflow: hidden;
             user-select: none;
         }
+        #nextItem {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: center;
+            z-index: 10000;
+        }
+        #nextBtn {
+            z-index: 10000;
+        }
 </style>
 </head>
 <body>
+    <!-- https://www.storyblocks.com -->
+    <audio id="charge-effect" src="charge.mp3"></audio>
+    <!-- https://www.storyblocks.com -->
+    <audio id="splode-effect" src="splode.mp3"></audio>
+    <!-- https://soundbible.com/1003-Ta-Da.html -->
+    <audio id="success-effect" src="success.mp3"></audio>
+    <!-- https://soundbible.com/1127-Computer-Error.html -->
+    <audio id="wrong-effect" src="wrong.mp3"></audio>
     <div id="target-container"></div>
     <script>
+
+        // const AudioContext = window.AudioContext || window.webkitAudioContext;
+        // const audioContext = new AudioContext();
+        const wrongEl = document.querySelector("#wrong-effect");
+        const chargeEl = document.querySelector("#charge-effect");
+        const splodeEl = document.querySelector("#splode-effect");
+        const successEl = document.querySelector("#success-effect");
+        // const chargeTrack = audioContext.createMediaElementSource(chargeEl);
+        // chargeTrack.connect(audioContext.destination);
+
         let wordList = ['Alaska','apple','aurora','baby','badger','ball','ballerina','banana','battery','beach','bear','beaver','beaver dam','bed','bee','beet','beluga','bicycle','bike','bird','blue','blueberry','boat','book','bowhead','bread','bridge','broccoli','cake','camping','canoe','carrot','castle','cat','caterpillar','cello','chair','chicken','chocolate','city','cliffs','clouds','coins','combine','computer','convertible','coral reef','cow','crab','crystal','cupcake','dam','danced','dear','desert','desk','dog','dolphin','drill','duck','dump truck','eagle','ear','earth','egg','elephant','etrog','excavator','eye','falcon','farm','ferry','fire engine','fire tower','fish','flower','fly','forest','fort','fox','frog','garbage truck','garden','gazelle','gecko','giraffe','glacier','golf','goose','gorilla','grape','greyhound','hammer','hands','hippo','horse','hot chocolate','house','humpback','husky','ice','ice cream','island','ISS','juice','kangaroo','king fisher','kite','kiwi','koi','lake','lava','lighthouse','lion','lulav','lynx','mars','merry go round','mesa','mezuzah','milk','mill','minke','minnow','monkey','moon','moose','motorcycle','mountain','mouse','mouth','muffin','mule','muskox','newspaper','northern lights','nose','oak','ocean','orca','otter','pepper','phone','plane','planet','pond','power line','puma','rain','rainbow','rainforest','raven','recorder','restaurant','right','river','road','rock','rocket','rookery','rose','rowboat','sailboat','salmon','sand','satellite','savanna','saxophone','scooter','sei','Shabbat','shells','ship','skid','skunk','sky','sled','snake','snow','snowflake','snowplow','snowshoes','soccer','solar panel','sperm whale','stars','strawberry','stream','sun','surfing','swan','table','tablet','taco','telephone','tennis','Texas','tidepool','tiger','toad','tools','torah','tractor','train','tree','treehouse','tressle','trombone','trout','trumpet','tuba','tulip','umbrella','violin','volcano','water','water tower','waves','wind','windmill','worm','wrench','yad','yak','zebra','zoo',];
-        // wordList = ['a'];
+        wordList = ['a'];
         function setUpRandomWord() {
             let word = wordList[choose(0, wordList.length)];
             setUpWord(word);
         }
 
         function setUpWord(word) { 
-            document.removeEventListener('pointerdown', setUpRandomWord);
+            let utterance = new SpeechSynthesisUtterance(word);
+            speechSynthesis.speak(utterance);
+
             let targetContainer = $('#target-container');
             targetContainer.empty();
             for (i in word) {
@@ -67,94 +114,132 @@
                 let el = $(`<div class="letter"><div class="target letter hidden ${letter}-target">${letter}</div><div class="animate letter draggable ${letter}-draggable" data-x="0" data-y="0" data-ax="0" data-ay="0">${letter}</div></div>`)
                 let item = targetContainer.append(el);
             }
-            setRandomColor($('.draggable'))
             let draggables = $('.draggable');
-            draggables.click(startExplosion)
+            setRandomColor(draggables);
+
+            $('.target').click(() => {
+                let utterance = new SpeechSynthesisUtterance(word);
+                speechSynthesis.speak(utterance);
+            });
+
+            let chargeStart = 0
+            draggables.on('pointerdown', () => {
+                chargeEl.play();
+                chargeStart = Date.now();
+                draggables.addClass('charging');
+            })
+            
+            $(document).on('pointerup', () => {
+                chargeEl.pause();
+                splodeEl.play();
+                let chargeEnd = Date.now();
+                let chargeDuration = chargeEnd - chargeStart;
+                let chargePercent = Math.min(chargeDuration/3500, 1);
+                console.log(chargePercent);
+                startExplosion(chargePercent);
+                draggables.off('pointerdown')
+                $(document).off('pointerup')
+                draggables.removeClass('charging');
+            });
+            // draggables.click(startExplosion)
         }
 
-        function startExplosion(e) {
+        function isCorrectDrop(targetEl, draggableEl) {
+            // given an interact.js event, 
+            // check if the droppable and target letters match
+            let targetLetter = targetEl.textContent;
+            let draggableLetter = draggableEl.textContent;
+            return targetLetter == draggableLetter;
+        }
+        function startExplosion(chargePercent) {
             // the word's been clicked!
             // explode all the letters to they can be put back together again.
-            let word = [...document.querySelectorAll('.target')].reduce((w, el) => {return w + el.textContent;}, '')
-            let utterance = new SpeechSynthesisUtterance(word);
-            speechSynthesis.speak(utterance);
             let draggables = $('.draggable')
             let targets = $('.target')
             targets.removeClass('hidden');
+            draggables.addClass('exploded');
             for (draggable of draggables) {
-                startRandomAnimation(draggable, .05, .2, 5);
+                let chargeModifier = 1 + (chargePercent * 2)
+                startRandomAnimation(draggable, .05*chargeModifier, .2*chargeModifier, 5);
             }
             draggables.off('click');
 
-            for (target of targets) {
-                let letter = target.textContent
-                interact(`.${letter}-target`)
-                    .dropzone({
-                        overlap: .5,
-                        accept: `.${letter}-draggable`,
-                        checker: function (
-                            dragEvent,         // related dragmove or dragend
-                            event,             // Touch, Pointer or Mouse Event
-                            dropped,           // bool default checker result
-                            dropzone,          // dropzone Interactable
-                            dropzoneElement,   // dropzone element
-                            draggable,         // draggable Interactable
-                            draggableElement   // draggable element
-                        ) {
-                            // only allow drops into visible dropzone elements
-                            return dropped && !dropzoneElement.classList.contains('hidden');
-                        },
-                        ondrop: function (event) {
-                            let el = event.target;
-                            el.classList.add('hidden');
-                            interact(el).dropzone(false);
-                            interact(event.relatedTarget).draggable(false);
-                            if (!document.querySelectorAll('.target:not(.hidden)').length) {
-                                completeWord();
-                            }
-                        },
-                        ondragenter: function(event) {
-                            let draggableEl = event.relatedTarget;
-                            let targetEl  = event.target;
+            interact(`.target`)
+                .dropzone({
+                    overlap: .5,
+                    checker: function (
+                        dragEvent,         // related dragmove or dragend
+                        event,             // Touch, Pointer or Mouse Event
+                        dropped,           // bool default checker result
+                        dropzone,          // dropzone Interactable
+                        dropzoneElement,   // dropzone element
+                        draggable,         // draggable Interactable
+                        draggableElement   // draggable element
+                    ) {
+                        // only allow drops into visible dropzone elements
+                        return dropped && !dropzoneElement.classList.contains('hidden');
+                    },
+                    ondrop: function (event) {
+                        let el = event.target;
+                        let relEl = event.relatedTarget;
+                        el.classList.add('hidden');
+                        relEl.classList.remove('exploded');
+                        interact(el).dropzone(false);
+                        interact(relEl).draggable(false);
+                        if (!document.querySelectorAll('.target:not(.hidden)').length) {
+                            completeWord();
+                        }
+                    },
+                    ondragenter: function(event) {
+                        let draggableEl = event.relatedTarget;
+                        let targetEl  = event.target;
+                        if (isCorrectDrop(targetEl, draggableEl)) {
                             let dropRect         = interact.getElementRect(targetEl);
                             let dropCenter       = {
                                 x: dropRect.left + dropRect.width  / 2,
                                 y: dropRect.top  + dropRect.height / 2
                             };
-
+                            
                             event.draggable.draggable({
                                 snap: {
                                     targets: [dropCenter]
                                 }
                             });
-
-                            // feedback the possibility of a drop
-                            // targetEl.classList.add('can--catch');
-                            // draggableEl.classList.add('drop--me');
-                        },
-                        ondragleave: function(event) {
-                            let el  = event.relatedTarget;
-                            event.draggable.draggable({
-                                snap: {
-                                    targets: [{x: parseInt(el.dataset.initx), y: parseInt(el.dataset.inity)}]
-                                }
-                            });
                         }
-                    })
-                    .on('dropactivate', function (event) {
-                        event.target.classList.add('drop-activated')
-                    })
-            }
-
+                    },
+                    ondragleave: function(event) {
+                        let el  = event.relatedTarget;
+                        event.draggable.draggable({
+                            snap: {
+                                targets: [{x: parseInt(el.dataset.initx), y: parseInt(el.dataset.inity)}]
+                            }
+                        });
+                    }
+                })
+                .on('dropactivate', function (event) {
+                    event.target.classList.add('drop-activated')
+                })
         }
 
         function completeWord() {
             // all letters have been put back together!
-            // say the word and setup so next click starts a new word
-            let word = [...document.querySelectorAll('.target')].reduce((w, el) => {return w + el.textContent;}, '')
-            let utterance = new SpeechSynthesisUtterance(word);
-            speechSynthesis.speak(utterance);
-            document.addEventListener('pointerdown', setUpRandomWord);
+            // play success; say the word and setup so next click starts a new word
+            let targets = [...document.querySelectorAll('.target')]
+            let word = targets.reduce((w, el) => {return w + el.textContent;}, '')
+            let rect = targets[0].getBoundingClientRect();
+            let yOffset = rect.top + rect.height + 10;
+            successEl.play();
+            successEl.addEventListener('ended', () => {
+                let utterance = new SpeechSynthesisUtterance(word);
+                speechSynthesis.speak(utterance);
+                utterance.onend = (event) => {
+                    let targetContainer = $('#target-container');
+                    let nextBtn = $('<div id="nextItem"><!-- https://findicons.com/icon/19190/forward --><img id="nextBtn" src="next.png"/></div>').click(setUpRandomWord)
+                    targetContainer.after(nextBtn);
+                    // targetContainer.offset({ top: yOffset, left: 0 });
+                }
+
+            })
 
         }
         function startRandomAnimation(el, min, max, a) {
@@ -246,13 +331,20 @@
                 listeners: {
                     start(event) {
                         event.target.classList.add('dragging');
+                        event.target.parentElement.classList.add('dragging-parent')
                     },
                     move(event) {
                         translate(event.target, event.dx, event.dy);
                     },
                     end(event) {
-                        event.target.classList.remove('dragging');
-
+                        let el = event.target;
+                        let targetEl = event.dragLeave;
+                        el.classList.remove('dragging');
+                        el.parentElement.classList.remove('dragging-parent')
+                        if (targetEl && !isCorrectDrop(targetEl, el))
+                        {
+                            wrongEl.play();
+                        }
                     }
                 },
                 snap: {
