@@ -2,6 +2,9 @@
 <html>
 <head>
     <title>WordSplosion!</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js" integrity="sha512-aVKKRRi/Q/YV+4mjoKBsE4x3H+BkegoM/em46NNlCqNTmUYADjBbeNefNxYV7giUp0VxICtqdrbqU7iVaeZNXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/interact.js/1.10.17/interact.min.js" integrity="sha512-XcVj3UAxYb1bcxemjAU6ncOu6lhnuRz98icTuL+jrJE+2SCWFMZFc+5FaFsNikLKujDfL71c4LK5OBz1lsAKag==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js" integrity="sha512-6+YN/9o9BWrk6wSfGxQGpt3EUK6XeHi6yeHV+TYD2GR0Sj/cggRpXr1BrAQf0as6XslxomMUxXp2vIl+fv0QRA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -107,11 +110,6 @@
             });
         }
 
-        const wrongEl = document.querySelector("#wrong-effect");
-        const chargeEl = document.querySelector("#charge-effect");
-        const splodeEl = document.querySelector("#splode-effect");
-        const successEl = document.querySelector("#success-effect");
-
         let wordList = ['Alaska','apple','aurora','baby','badger','ball','ballerina','banana','battery','beach','bear','beaver','beaver dam','bed','bee','beet','beluga','bicycle','bike','bird','blue','blueberry','boat','book','bowhead','bread','bridge','broccoli','cake','camping','canoe','carrot','castle','cat','caterpillar','cello','chair','chicken','chocolate','city','cliffs','clouds','coins','combine','computer','convertible','coral reef','cow','crab','crystal','cupcake','dam','danced','dear','desert','desk','dog','dolphin','drill','duck','dump truck','eagle','ear','earth','egg','elephant','etrog','excavator','eye','falcon','farm','ferry','fire engine','fire tower','fish','flower','fly','forest','fort','fox','frog','garbage truck','garden','gazelle','gecko','giraffe','glacier','golf','goose','gorilla','grape','greyhound','hammer','hands','hippo','horse','hot chocolate','house','humpback','husky','ice','ice cream','island','ISS','juice','kangaroo','king fisher','kite','kiwi','koi','lake','lava','lighthouse','lion','lulav','lynx','mars','merry go round','mesa','mezuzah','milk','mill','minke','minnow','monkey','moon','moose','motorcycle','mountain','mouse','mouth','muffin','mule','muskox','newspaper','northern lights','nose','oak','ocean','orca','otter','pepper','phone','plane','planet','pond','power line','puma','rain','rainbow','rainforest','raven','recorder','restaurant','right','river','road','rock','rocket','rookery','rose','rowboat','sailboat','salmon','sand','satellite','savanna','saxophone','scooter','sei','Shabbat','shells','ship','skid','skunk','sky','sled','snake','snow','snowflake','snowplow','snowshoes','soccer','solar panel','sperm whale','stars','strawberry','stream','sun','surfing','swan','table','tablet','taco','telephone','tennis','Texas','tidepool','tiger','toad','tools','torah','tractor','train','tree','treehouse','tressle','trombone','trout','trumpet','tuba','tulip','umbrella','violin','volcano','water','water tower','waves','wind','windmill','worm','wrench','yad','yak','zebra','zoo',];
         function setUpRandomWord() {
             $('#nextItem').addClass('hidden');
@@ -121,7 +119,6 @@
 
         function setUpWord(word) { 
             let utterance = new SpeechSynthesisUtterance(word);
-            console.log('setUpWord speak:', word)
             speechSynthesis.speak(utterance);
 
             let targetContainer = $('#target-container');
@@ -140,7 +137,6 @@
             setRandomColor(draggables);
 
             $('.target').click(() => {
-                console.log('target speak:', word)
                 let utterance = new SpeechSynthesisUtterance(word);
                 speechSynthesis.speak(utterance);
             });
@@ -214,7 +210,6 @@
                         interact(el).dropzone(false);
                         interact(relEl).draggable(false);
                         if (!document.querySelectorAll('.target:not(.hidden)').length) {
-                            console.log('ondrop complete:', el.textContent)
                             completeWord();
                         }
                     },
@@ -260,7 +255,6 @@
             sounds['success'].once('end', function() {
                 let utterance = new SpeechSynthesisUtterance(word);
                 speechSynthesis.speak(utterance);
-                console.log('completeWord speak:', word)
                 utterance.onend = (event) => {
                     let nextBtn = $('#nextItem').removeClass('hidden');
                 }
@@ -319,7 +313,6 @@
             vy = manageCollision(vy, rect.height, rect.top, targetContainer.height());
             let ax = parseFloat(el.dataset.ax);
             let ay = parseFloat(el.dataset.ay);
-            console.log('animate!', vx, vy)
             if (Math.round(vx) || Math.round(vy)) {
                 translate(el, vx, vy);
                 el.dataset.vx = addMagnitude(vx, -ax);
@@ -346,14 +339,12 @@
             if (!el.textContent) {
                 debugger;
             }
-            console.log('finish animating', el.textContent);
             el.removeEventListener("transitionend", animate);
             let rect = el.getBoundingClientRect();
             let initx = el.dataset.initx = rect.left + rect.width  / 2;
             let inity = el.dataset.inity = rect.top + rect.height / 2
             el.classList.remove('animate');
             el.addEventListener('pointerdown', function(event) {
-                console.log('draggable speak:', event.target.textContent)
                 let utterance = new SpeechSynthesisUtterance(event.target.textContent);
                 speechSynthesis.speak(utterance);
             })
