@@ -63,6 +63,7 @@
             height: 100%;
             overflow: hidden;
             user-select: none;
+            -webkit-user-select: none;
         }
         #nextItem {
             width: 100%;
@@ -92,6 +93,8 @@
         <img id="nextBtn" src="next.png" onclick="setUpRandomWord()"/>
     </div>
     <script>
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
 
         document.addEventListener('contextmenu', (event) => {event.preventDefault();});
         const wrongEl = document.querySelector("#wrong-effect");
