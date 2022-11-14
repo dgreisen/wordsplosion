@@ -88,7 +88,7 @@
     <!-- https://soundbible.com/1127-Computer-Error.html -->
     <audio id="wrong-effect" src="wrong.mp3"></audio>
     <div id="target-container"></div>
-    <div id="nextItem" class="hidden">
+    <div id="nextItem">
         <!-- https://findicons.com/icon/19190/forward -->
         <img id="nextBtn" src="next.png" onclick="setUpRandomWord()"/>
     </div>
@@ -425,9 +425,6 @@
                 $(el).css("color", getRandomColor());
             }
         }
-        
-        // kick everything off!
-        setUpRandomWord();
     </script>
 
 </body>
