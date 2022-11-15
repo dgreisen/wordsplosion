@@ -4,7 +4,7 @@
     <title>WordSplosion!</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width = device-width, height = device-height" />
 
     <link rel="apple-touch-icon" href="./apple-touch-icon.png">
     <link rel="apple-touch-icon" sizes="57x57" href="./apple-touch-icon-57x57.png">
@@ -110,6 +110,8 @@
     <script>
         // prevent context menu when right click or long tap
         document.addEventListener('contextmenu', (event) => {event.preventDefault();});
+        document.ontouchmove = function(e){e.preventDefault(); } ;
+        document.ontouchstart = function(e){e.preventDefault(); };
 
         const sounds = {}
         
